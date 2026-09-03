@@ -1,66 +1,122 @@
 # ==============================================
-# SCRIPT CORRIGÉ: Trouver les droits WriteDacl de Carlos
+# MÉTHODE AVEC GET-ACL (Plus Robuste)
 # ==============================================
 
-# Étape 1: Importer le module ActiveDirectory
-Write-Host "=== Étape 1: Import du module ActiveDirectory ===" -ForegroundColor Yellow
+Write-Host "=== Recherche des droits WriteDacl de Carlos avec Get-ACL ===" -ForegroundColor Yellow
+
+# Importer le module AD
 Import-Module ActiveDirectory -ErrorAction SilentlyContinue
 
-# Vérifier si le module est chargé
+# Si le module n'est pas disponible, utiliser ADSI
 if (-not (Get-Module ActiveDirectory)) {
-    Write-Host "ERREUR: Le module ActiveDirectory n'est pas disponible" -ForegroundColor Red
-    Write-Host "Essayez avec la méthode alternative ci-dessous" -ForegroundColor Yellow
-    exit
+    Write-Host "Module ActiveDirectory non disponible, utilisation d'ADSI..." -ForegroundColor Yellow
 }
-Write-Host "Module ActiveDirectory importé!" -ForegroundColor Green
-Write-Host ""
 
-# Étape 2: Récupérer l'utilisateur Carlos
-Write-Host "=== Étape 2: Recherche de Carlos ===" -ForegroundColor Yellow
+# Étape 1: Trouver Carlos
+Write-Host "Recherche de Carlos..." -ForegroundColor Gray
 try {
-    $Carlos = Get-ADUser Carlos -Properties * -ErrorAction Stop
-    Write-Host "Carlos trouvé!" -ForegroundColor Green
-    Write-Host "  Nom: $($Carlos.Name)" -ForegroundColor Gray
-    Write-Host "  SID: $($Carlos.SID.Value)" -ForegroundColor Gray
+    # Essayer avec Get-ADUser d'abord
+    $Carlos = Get-ADUser Carlos -Properties objectSid, DistinguishedName -ErrorAction SilentlyContinue
+    if ($Carlos) {
+        $CarlosDN = $Carlos.DistinguishedName
+        $CarlosSID = $Carlos.SID.Value
+        Write-Host "Carlos trouvé avec Get-ADUser" -ForegroundColor Green
+    }
 } catch {
-    Write-Host "Erreur: $($_.Exception.Message)" -ForegroundColor Red
+    # Si Get-ADUser échoue, utiliser ADSI
+    $DomainDN = "DC=CEH,DC=CYBERSPHERE,DC=com"
+    $Root = [ADSI]"LDAP://$DomainDN"
+    $Searcher = New-Object DirectoryServices.DirectorySearcher($Root)
+    $Searcher.Filter = "(sAMAccountName=Carlos)"
+    $Searcher.PropertiesToLoad.AddRange(@("distinguishedName", "objectSid"))
+    $Result = $Searcher.FindOne()
+    
+    if ($Result) {
+        $CarlosDN = $Result.Properties.distinguishedName[0]
+        $CarlosSID = $Result.Properties.objectSid[0]
+        Write-Host "Carlos trouvé avec ADSI" -ForegroundColor Green
+    }
+}
+
+if (-not $CarlosDN) {
+    Write-Host "ERREUR: Carlos non trouvé!" -ForegroundColor Red
     exit
 }
+
+Write-Host "  DN: $CarlosDN" -ForegroundColor Gray
+Write-Host "  SID: $CarlosSID" -ForegroundColor Gray
 Write-Host ""
 
-# Étape 3: Récupérer les objets (sans -Properties)
-Write-Host "=== Étape 3: Récupération des objets AD ===" -ForegroundColor Yellow
+# Étape 2: Trouver tous les utilisateurs du domaine
+Write-Host "Recherche des ACLs WriteDacl..." -ForegroundColor Gray
 
-# Méthode 1: Utiliser Get-ADObject sans -Properties (prend les propriétés par défaut)
-# Puis ajouter la propriété nTSecurityDescriptor via un autre appel
-$AllObjects = Get-ADObject -Filter *
-Write-Host "$($AllObjects.Count) objets trouvés (noms seulement)" -ForegroundColor Green
+$DomainDN = "DC=CEH,DC=CYBERSPHERE,DC=com"
+$ADSI = [ADSI]"LDAP://$DomainDN"
+$Searcher = New-Object DirectoryServices.DirectorySearcher($ADSI)
+$Searcher.Filter = "(objectClass=user)"
+$Searcher.PropertiesToLoad.AddRange(@("name", "distinguishedName", "objectSid", "nTSecurityDescriptor"))
+$Searcher.PageSize = 1000
+$Users = $Searcher.FindAll()
 
-# Récupérer les propriétés une par une
-Write-Host "Récupération des descripteurs de sécurité..." -ForegroundColor Gray
+Write-Host "$($Users.Count) utilisateurs trouvés" -ForegroundColor Green
+Write-Host ""
+
 $Results = @()
 
-foreach ($Object in $AllObjects) {
+foreach ($User in $Users) {
     try {
-        # Récupérer les propriétés séparément
-        $ObjectDetail = Get-ADObject -Identity $Object.DistinguishedName -Properties nTSecurityDescriptor, ObjectClass
+        $UserDN = $User.Properties.distinguishedName[0]
+        $UserName = $User.Properties.name[0]
         
-        if ($ObjectDetail -and $ObjectDetail.nTSecurityDescriptor) {
-            $SD = $ObjectDetail.nTSecurityDescriptor
-            $ACLs = $SD.Access
+        # Utiliser Get-ACL pour obtenir les permissions
+        try {
+            $ACL = Get-ACL -Path "AD:\$UserDN" -ErrorAction SilentlyContinue
             
-            foreach ($ACL in $ACLs) {
-                if ($ACL.IdentityReference -and $ACL.IdentityReference.Value -match $Carlos.SID.Value) {
-                    if ($ACL.ActiveDirectoryRights.ToString() -match "WriteDacl") {
+            foreach ($AccessRule in $ACL.Access) {
+                # Vérifier si Carlos a des permissions
+                if ($AccessRule.IdentityReference.Value -match $CarlosSID) {
+                    # Vérifier WriteDacl (ou GenericAll qui inclut WriteDacl)
+                    $Rights = $AccessRule.ActiveDirectoryRights
+                    
+                    if (($Rights -band [System.DirectoryServices.ActiveDirectoryRights]::WriteDacl) -or 
+                        ($Rights -band [System.DirectoryServices.ActiveDirectoryRights]::GenericAll)) {
+                        
                         $Results += [PSCustomObject]@{
-                            Nom = $ObjectDetail.Name
-                            ObjectClass = $ObjectDetail.ObjectClass
-                            DN = $ObjectDetail.DistinguishedName
-                            Droits = $ACL.ActiveDirectoryRights.ToString()
+                            Nom = $UserName
+                            DN = $UserDN
+                            Droits = $Rights.ToString()
                         }
-                        Write-Host "  -> Carlos a WriteDacl sur: $($ObjectDetail.Name)" -ForegroundColor Green
+                        
+                        Write-Host "  -> Carlos a WriteDacl sur: $UserName" -ForegroundColor Green
+                        Write-Host "     Droits: $($Rights.ToString())" -ForegroundColor Gray
                     }
                 }
+            }
+        } catch {
+            # Si Get-ACL échoue, utiliser la méthode ADSI directe
+            try {
+                $UserObject = [ADSI]"LDAP://$UserDN"
+                $SD = $UserObject.ObjectSecurity
+                
+                if ($SD) {
+                    foreach ($AccessRule in $SD.Access) {
+                        if ($AccessRule.IdentityReference.Value -match $CarlosSID) {
+                            if (($AccessRule.ActiveDirectoryRights -band 0x40000) -or # WriteDacl
+                                ($AccessRule.ActiveDirectoryRights -band 0x10000000)) { # GenericAll
+                                
+                                $Results += [PSCustomObject]@{
+                                    Nom = $UserName
+                                    DN = $UserDN
+                                    Droits = $AccessRule.ActiveDirectoryRights.ToString()
+                                }
+                                
+                                Write-Host "  -> Carlos a WriteDacl sur: $UserName" -ForegroundColor Green
+                            }
+                        }
+                    }
+                }
+            } catch {
+                # Ignorer les erreurs
             }
         }
     } catch {
@@ -68,27 +124,46 @@ foreach ($Object in $AllObjects) {
     }
 }
 
-# Étape 4: Afficher les résultats
+# Étape 3: Afficher les résultats
 Write-Host ""
 Write-Host "=== Résultats ===" -ForegroundColor Yellow
 
 if ($Results.Count -gt 0) {
-    $UserResults = $Results | Where-Object { $_.ObjectClass -eq "user" }
-    
-    if ($UserResults.Count -gt 0) {
-        Write-Host "Comptes utilisateur trouvés:" -ForegroundColor Green
-        foreach ($Result in $UserResults) {
-            Write-Host "  -> $($Result.Nom)" -ForegroundColor Green
-        }
-        $Answer = $UserResults[0].Nom
-        Write-Host ""
-        Write-Host "RÉPONSE: $Answer" -ForegroundColor Cyan
-    } else {
-        Write-Host "Objets trouvés (non-utilisateurs):" -ForegroundColor Yellow
-        foreach ($Result in $Results) {
-            Write-Host "  -> $($Result.Nom) ($($Result.ObjectClass))" -ForegroundColor Yellow
-        }
+    Write-Host "Carlos peut gérer les utilisateurs suivants:" -ForegroundColor Green
+    foreach ($Result in $Results) {
+        Write-Host "  -> $($Result.Nom)" -ForegroundColor Green
+        Write-Host "     Droits: $($Result.Droits)" -ForegroundColor Gray
     }
+    
+    $Answer = $Results[0].Nom
+    Write-Host ""
+    Write-Host "==================================================" -ForegroundColor Cyan
+    Write-Host "RÉPONSE FINALE: $Answer" -ForegroundColor Yellow -BackgroundColor Black
+    Write-Host "==================================================" -ForegroundColor Cyan
 } else {
-    Write-Host "Aucun droit WriteDacl trouvé pour Carlos" -ForegroundColor Red
+    Write-Host "Aucun compte utilisateur trouvé avec WriteDacl pour Carlos" -ForegroundColor Yellow
+    
+    # Vérifier si Carlos a des droits sur d'autres objets
+    Write-Host ""
+    Write-Host "Vérification des autres objets (groupes, etc.)..." -ForegroundColor Gray
+    
+    $Searcher.Filter = "(objectClass=group)"
+    $Groups = $Searcher.FindAll()
+    
+    foreach ($Group in $Groups) {
+        try {
+            $GroupDN = $Group.Properties.distinguishedName[0]
+            $GroupName = $Group.Properties.name[0]
+            
+            $ACL = Get-ACL -Path "AD:\$GroupDN" -ErrorAction SilentlyContinue
+            foreach ($AccessRule in $ACL.Access) {
+                if ($AccessRule.IdentityReference.Value -match $CarlosSID) {
+                    if (($AccessRule.ActiveDirectoryRights -band 0x40000) -or 
+                        ($AccessRule.ActiveDirectoryRights -band 0x10000000)) {
+                        Write-Host "  -> Carlos a WriteDacl sur le groupe: $GroupName" -ForegroundColor Yellow
+                    }
+                }
+            }
+        } catch {}
+    }
 }

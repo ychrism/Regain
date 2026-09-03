@@ -1,0 +1,102 @@
+# Nmap 7.94SVN scan initiated Thu Sep  3 16:39:49 2026 as: nmap -sV -sC -oN nmap_scan_10 10.100.50.0/24
+Nmap scan report for 10.100.50.1
+Host is up (0.00050s latency).
+Not shown: 998 filtered tcp ports (no-response)
+PORT   STATE SERVICE VERSION
+53/tcp open  domain  Unbound
+80/tcp open  http    nginx
+|_http-title: pfSense - Login
+
+Nmap scan report for 10.100.50.200
+Host is up (0.00079s latency).
+Not shown: 982 closed tcp ports (reset)
+PORT     STATE SERVICE       VERSION
+53/tcp   open  domain        Simple DNS Plus
+80/tcp   open  http          Microsoft IIS httpd 10.0
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-title: IIS Windows Server
+88/tcp   open  kerberos-sec  Microsoft Windows Kerberos (server time: 2026-09-03 20:40:04Z)
+135/tcp  open  msrpc         Microsoft Windows RPC
+139/tcp  open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: CEH.CYBERSPHERE.com0., Site: Default-First-Site-Name)
+445/tcp  open  microsoft-ds  Windows Server 2022 Standard 20348 microsoft-ds
+| fingerprint-strings: 
+|   SMBProgNeg: 
+|     SMBr
+|_    Lo'C
+464/tcp  open  kpasswd5?
+593/tcp  open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp  open  tcpwrapped
+1433/tcp open  ms-sql-s      Microsoft SQL Server 2022 16.00.1000.00; RC0+
+| ms-sql-info: 
+|   10.100.50.200\SQLEXPRESS: 
+|     Instance name: SQLEXPRESS
+|     Version: 
+|       name: Microsoft SQL Server 2022 RC0+
+|       number: 16.00.1000.00
+|       Product: Microsoft SQL Server 2022
+|       Service pack level: RC0
+|       Post-SP patches applied: true
+|     TCP port: 1433
+|_    Clustered: false
+| ms-sql-ntlm-info: 
+|   10.100.50.200\SQLEXPRESS: 
+|     Target_Name: CEH.CYBERSPHERE
+|     NetBIOS_Domain_Name: CEH.CYBERSPHERE
+|     NetBIOS_Computer_Name: SERVER2022
+|     DNS_Domain_Name: CEH.CYBERSPHERE.com
+|     DNS_Computer_Name: Server2022.CEH.CYBERSPHERE.com
+|     DNS_Tree_Name: CEH.CYBERSPHERE.com
+|_    Product_Version: 10.0.20348
+| ssl-cert: Subject: commonName=SSL_Self_Signed_Fallback
+| Not valid before: 2026-09-03T20:19:29
+|_Not valid after:  2056-09-03T20:19:29
+|_ssl-date: 2026-09-03T20:41:01+00:00; 0s from scanner time.
+1801/tcp open  msmq?
+2103/tcp open  msrpc         Microsoft Windows RPC
+2105/tcp open  msrpc         Microsoft Windows RPC
+2107/tcp open  msrpc         Microsoft Windows RPC
+3268/tcp open  ldap          Microsoft Windows Active Directory LDAP (Domain: CEH.CYBERSPHERE.com0., Site: Default-First-Site-Name)
+3269/tcp open  tcpwrapped
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+|_ssl-date: 2026-09-03T20:41:01+00:00; 0s from scanner time.
+| rdp-ntlm-info: 
+|   Target_Name: CEH.CYBERSPHERE
+|   NetBIOS_Domain_Name: CEH.CYBERSPHERE
+|   NetBIOS_Computer_Name: SERVER2022
+|   DNS_Domain_Name: CEH.CYBERSPHERE.com
+|   DNS_Computer_Name: Server2022.CEH.CYBERSPHERE.com
+|   DNS_Tree_Name: CEH.CYBERSPHERE.com
+|   Product_Version: 10.0.20348
+|_  System_Time: 2026-09-03T20:40:53+00:00
+| ssl-cert: Subject: commonName=Server2022.CEH.CYBERSPHERE.com
+| Not valid before: 2026-09-02T21:17:12
+|_Not valid after:  2027-03-04T21:17:12
+Service Info: Host: SERVER2022; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time: 
+|   date: 2026-09-03T20:40:54
+|_  start_date: N/A
+| smb-os-discovery: 
+|   OS: Windows Server 2022 Standard 20348 (Windows Server 2022 Standard 6.3)
+|   Computer name: Server2022
+|   NetBIOS computer name: 
+|   Domain name: CEH.CYBERSPHERE.com
+|   Forest name: CEH.CYBERSPHERE.com
+|   FQDN: Server2022.CEH.CYBERSPHERE.com
+|_  System time: 2026-09-03T13:40:55-07:00
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled and required
+|_clock-skew: mean: 1h00m00s, deviation: 2h38m45s, median: 0s
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Thu Sep  3 16:41:02 2026 -- 256 IP addresses (2 hosts up) scanned in 72.75 seconds

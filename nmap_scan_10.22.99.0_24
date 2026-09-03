@@ -1,0 +1,199 @@
+# Nmap 7.94SVN scan initiated Thu Sep  3 16:35:47 2026 as: nmap -sV -sC -oN nmap_scan_10.22.99.0_24 10.22.99.0/24
+Nmap scan report for 10.22.99.1
+Host is up (0.00047s latency).
+Not shown: 998 filtered tcp ports (no-response)
+PORT   STATE SERVICE VERSION
+53/tcp open  domain  Unbound
+80/tcp open  http    nginx
+|_http-title: pfSense - Login
+
+Nmap scan report for 10.22.99.69
+Host is up (0.00081s latency).
+Not shown: 999 closed tcp ports (reset)
+PORT     STATE SERVICE VERSION
+5555/tcp open  adb     Android Debug Bridge device (name: android_x86_64; model: Virtual Machine; device: x86_64; features: cmd,stat_v2,shell_v2)
+Service Info: OS: Android; CPE: cpe:/o:linux:linux_kernel
+
+Nmap scan report for 10.22.99.88
+Host is up (0.0020s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.6 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   256 3b:23:12:8c:e2:d5:91:d3:e5:5a:93:82:11:b9:fb:f6 (ECDSA)
+|_  256 ae:80:12:14:aa:cb:96:ea:ec:cb:5a:e1:3a:33:76:f4 (ED25519)
+80/tcp open  http    Apache httpd 2.4.52 ((Ubuntu))
+|_http-server-header: Apache/2.4.52 (Ubuntu)
+|_http-title: Apache2 Ubuntu Default Page: It works
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Nmap scan report for 10.22.99.101
+Host is up (0.0013s latency).
+Not shown: 989 closed tcp ports (reset)
+PORT     STATE SERVICE       VERSION
+80/tcp   open  http          Microsoft IIS httpd 10.0
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-title: IIS Windows Server
+135/tcp  open  msrpc         Microsoft Windows RPC
+139/tcp  open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp  open  microsoft-ds?
+1077/tcp open  ms-sql-s      Microsoft SQL Server 2022 16.00.1000.00; RC0+
+| ms-sql-info: 
+|   10.22.99.101:1077: 
+|     Version: 
+|       name: Microsoft SQL Server 2022 RC0+
+|       number: 16.00.1000.00
+|       Product: Microsoft SQL Server 2022
+|       Service pack level: RC0
+|       Post-SP patches applied: true
+|_    TCP port: 1077
+|_ssl-date: 2026-09-03T20:39:05+00:00; 0s from scanner time.
+| ms-sql-ntlm-info: 
+|   10.22.99.101:1077: 
+|     Target_Name: CEH.CYBERSPHERE
+|     NetBIOS_Domain_Name: CEH.CYBERSPHERE
+|     NetBIOS_Computer_Name: MSSSRV
+|     DNS_Domain_Name: CEH.CYBERSPHERE.com
+|     DNS_Computer_Name: MSSSRV.CEH.CYBERSPHERE.com
+|_    Product_Version: 10.0.17763
+| ssl-cert: Subject: commonName=SSL_Self_Signed_Fallback
+| Not valid before: 2026-09-03T20:19:28
+|_Not valid after:  2056-09-03T20:19:28
+1433/tcp open  ms-sql-s      Microsoft SQL Server 2022 16.00.1000.00; RC0+
+| ms-sql-ntlm-info: 
+|   10.22.99.101\SQLEXPRESS: 
+|     Target_Name: CEH.CYBERSPHERE
+|     NetBIOS_Domain_Name: CEH.CYBERSPHERE
+|     NetBIOS_Computer_Name: MSSSRV
+|     DNS_Domain_Name: CEH.CYBERSPHERE.com
+|     DNS_Computer_Name: MSSSRV.CEH.CYBERSPHERE.com
+|_    Product_Version: 10.0.17763
+| ms-sql-info: 
+|   10.22.99.101\SQLEXPRESS: 
+|     Instance name: SQLEXPRESS
+|     Version: 
+|       name: Microsoft SQL Server 2022 RC0+
+|       number: 16.00.1000.00
+|       Product: Microsoft SQL Server 2022
+|       Service pack level: RC0
+|       Post-SP patches applied: true
+|     TCP port: 1433
+|_    Clustered: false
+| ssl-cert: Subject: commonName=SSL_Self_Signed_Fallback
+| Not valid before: 2026-09-03T20:19:28
+|_Not valid after:  2056-09-03T20:19:28
+|_ssl-date: 2026-09-03T20:39:05+00:00; 0s from scanner time.
+1801/tcp open  msmq?
+2103/tcp open  msrpc         Microsoft Windows RPC
+2105/tcp open  msrpc         Microsoft Windows RPC
+2107/tcp open  msrpc         Microsoft Windows RPC
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+|_ssl-date: 2026-09-03T20:39:05+00:00; 0s from scanner time.
+| rdp-ntlm-info: 
+|   Target_Name: CEH.CYBERSPHERE
+|   NetBIOS_Domain_Name: CEH.CYBERSPHERE
+|   NetBIOS_Computer_Name: MSSSRV
+|   DNS_Domain_Name: CEH.CYBERSPHERE.com
+|   DNS_Computer_Name: MSSSRV.CEH.CYBERSPHERE.com
+|   Product_Version: 10.0.17763
+|_  System_Time: 2026-09-03T20:38:40+00:00
+| ssl-cert: Subject: commonName=MSSSRV.CEH.CYBERSPHERE.com
+| Not valid before: 2026-09-02T21:17:12
+|_Not valid after:  2027-03-04T21:17:12
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time: 
+|   date: 2026-09-03T20:38:42
+|_  start_date: N/A
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled but not required
+
+Nmap scan report for 10.22.99.169
+Host is up (0.0011s latency).
+Not shown: 995 closed tcp ports (reset)
+PORT    STATE SERVICE       VERSION
+21/tcp  open  tcpwrapped
+80/tcp  open  http          Microsoft IIS httpd 10.0
+|_http-title: IIS Windows
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+135/tcp open  msrpc         Microsoft Windows RPC
+139/tcp open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp open  microsoft-ds?
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled but not required
+| smb2-time: 
+|   date: 2026-09-03T20:38:48
+|_  start_date: N/A
+
+Nmap scan report for 10.22.99.170
+Host is up (0.00079s latency).
+Not shown: 989 closed tcp ports (reset)
+PORT     STATE SERVICE            VERSION
+7/tcp    open  echo
+9/tcp    open  discard?
+13/tcp   open  daytime            Microsoft Windows USA daytime
+17/tcp   open  qotd               Windows qotd (English)
+19/tcp   open  chargen
+21/tcp   open  tcpwrapped
+80/tcp   open  http               Microsoft IIS httpd 10.0
+|_http-title: IIS Windows
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+135/tcp  open  msrpc              Microsoft Windows RPC
+139/tcp  open  netbios-ssn        Microsoft Windows netbios-ssn
+445/tcp  open  microsoft-ds       Windows 10 Enterprise 22000 microsoft-ds (workgroup: WORKGROUP)
+3389/tcp open  ssl/ms-wbt-server?
+|_ssl-date: 2026-09-03T20:39:05+00:00; 0s from scanner time.
+| rdp-ntlm-info: 
+|   Target_Name: WINDOWS11
+|   NetBIOS_Domain_Name: WINDOWS11
+|   NetBIOS_Computer_Name: WINDOWS11
+|   DNS_Domain_Name: Windows11
+|   DNS_Computer_Name: Windows11
+|   Product_Version: 10.0.22000
+|_  System_Time: 2026-09-03T20:38:41+00:00
+| ssl-cert: Subject: commonName=Windows11
+| Not valid before: 2026-09-02T21:17:19
+|_Not valid after:  2027-03-04T21:17:19
+Service Info: Host: WINDOWS11; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb-security-mode: 
+|   account_used: <blank>
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled but not required
+| smb-os-discovery: 
+|   OS: Windows 10 Enterprise 22000 (Windows 10 Enterprise 6.3)
+|   OS CPE: cpe:/o:microsoft:windows_10::-
+|   Computer name: Windows11
+|   NetBIOS computer name: WINDOWS11\x00
+|   Workgroup: WORKGROUP\x00
+|_  System time: 2026-09-03T13:38:53-07:00
+|_clock-skew: mean: 1h24m02s, deviation: 3h07m55s, median: 0s
+| smb2-time: 
+|   date: 2026-09-03T20:38:52
+|_  start_date: N/A
+
+Post-scan script results:
+| clock-skew: 
+|   0s: 
+|     10.22.99.169
+|     10.22.99.170
+|_    10.22.99.101
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Thu Sep  3 16:39:06 2026 -- 256 IP addresses (6 hosts up) scanned in 198.51 seconds

